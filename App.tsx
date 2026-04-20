@@ -1,93 +1,41 @@
-// @ts-nocheck
-import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
-import './index.css';
-
-interface Note {
-  id: number;
-  title: string;
-  content: string;
-}
-
-export default function App() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [title, setTitle] = useState<string>('');
-  const [content, setContent] = useState<string>('');
-  const [editId, setEditId] = useState<number | null>(null);
-
-  useEffect(() => {
-    const savedData = localStorage.getItem('notes-data');
-    if (savedData) {
-      setNotes(JSON.parse(savedData));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('notes-data', JSON.stringify(notes));
-  }, [notes]);
-
-  const handleSave = (e: FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !content.trim()) return alert("Vyplňte pole!");
-
-    if (editId) {
-      setNotes(notes.map(n => n.id === editId ? { ...n, title, content } : n));
-      setEditId(null);
-    } else {
-      const newNote: Note = { id: Date.now(), title, content };
-      setNotes([...notes, newNote]);
-    }
-    setTitle(''); 
-    setContent('');
-  };
-
-  const deleteNote = (id: number) => {
-    if (window.confirm("Smazat?")) {
-      setNotes(notes.filter(n => n.id !== id));
-    }
-  };
-
-  const startEdit = (note: Note) => {
-    setEditId(note.id);
-    setTitle(note.title);
-    setContent(note.content);
-  };
-
   return (
     <div className="container">
-      <h1>Poznámkový blok</h1>
+      <h1>Můj Blok</h1>
       
-      <form onSubmit={handleSave} className="note-form">
-        <h3>{editId ? 'Upravit' : 'Nová poznámka'}</h3>
-        <input 
-          value={title} 
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)} 
-          placeholder="Název" 
-        />
-        <textarea 
-          value={content} 
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)} 
-          placeholder="Text" 
-        />
-        <button type="submit" className="btn-save">Uložit</button>
-        {editId && (
-          <button type="button" onClick={() => {setEditId(null); setTitle(''); setContent('');}}>
-            Zrušit
-          </button>
-        )}
-      </form>
+      {/* ПОЛЕ ПОИСКА */}
+      <input 
+        style={{ width: '100%', marginBottom: '15px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Vyhledat poznámku..."
+      />
 
-      <div className="note-list">
-        {notes.map(n => (
-          <div key={n.id} className="note-card">
-            <h4>{n.title}</h4>
-            <p>{n.content}</p>
-            <div className="actions">
-              <button onClick={() => startEdit(n)} className="btn-edit">Edit</button>
-              <button onClick={() => deleteNote(n.id)} className="btn-delete">Smazat</button>
+      <div className="input-group">
+        <input 
+          value={text} 
+          onChange={(e) => setText(e.target.value)} 
+          placeholder={editId ? "Upravit..." : "Napiš něco..."} 
+        />
+        <button onClick={addNote}>{editId ? "Uložit" : "Přidat"}</button>
+      </div>
+
+      <hr />
+
+      <div className="notes-list">
+        {/* ВАЖНО: используем filteredNotes вместо notes */}
+        {filteredNotes.map(note => (
+          <div key={note.id} className="note-item">
+            <span>{note.content}</span>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => startEdit(note)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>✎</button>
+              <button className="delete-btn" onClick={() => deleteNote(note.id)}>Smazat</button>
             </div>
           </div>
         ))}
       </div>
+
+      <p style={{ fontSize: '10px', color: 'gray', textAlign: 'center', marginTop: '20px' }}>
+        Změny automaticky uloženy v LocalStorage.
+      </p>
     </div>
   );
-}
